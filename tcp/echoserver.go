@@ -23,6 +23,10 @@ type Client struct {
 	WaitGroup wait.Wait
 }
 
+func InitEchoHandler() *EchoHandler {
+	return &EchoHandler{}
+}
+
 func (c *Client) Close() error {
 	if !c.WaitGroup.WaitWithTimeout(10 * time.Second) {
 		return fmt.Errorf("timeout while waiting")
@@ -37,7 +41,6 @@ func (c *Client) Close() error {
 func (h *EchoHandler) Handle(ctx context.Context, conn net.Conn) {
 	if h.closing.Load() {
 		conn.Close()
-		return
 	}
 
 	client := &Client{
@@ -47,20 +50,22 @@ func (h *EchoHandler) Handle(ctx context.Context, conn net.Conn) {
 	h.activeConnMap.Store(client, 1)
 
 	reader := bufio.NewReader(conn)
-	msg, err := reader.ReadString('\n')
-	if err != nil {
-		if err == io.EOF {
-			log.Printf("connection close")
-			h.activeConnMap.Delete(conn)
-		} else {
-			log.Printf("error reading message: %v", err)
+	for {
+		msg, err := reader.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				log.Printf("connection close")
+				h.activeConnMap.Delete(conn)
+			} else {
+				log.Printf("error reading message: %v", err)
+			}
+			return
 		}
-		return
+		client.WaitGroup.Add(1)
+		b := []byte(msg)
+		conn.Write(b)
+		client.WaitGroup.Done()
 	}
-	client.WaitGroup.Add(1)
-	b := []byte(msg)
-	conn.Write(b)
-	client.WaitGroup.Done()
 }
 
 func (h *EchoHandler) Close() error {
