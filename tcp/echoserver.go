@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"os"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -63,7 +64,10 @@ func (h *EchoHandler) Handle(ctx context.Context, conn net.Conn) {
 		}
 		client.WaitGroup.Add(1)
 		b := []byte(msg)
-		conn.Write(b)
+		err = h.Broadcast(b, conn)
+		if err != nil {
+			return
+		}
 		client.WaitGroup.Done()
 	}
 }
@@ -74,6 +78,21 @@ func (h *EchoHandler) Close() error {
 	h.activeConnMap.Range(func(key interface{}, value interface{}) bool {
 		client := key.(*Client)
 		client.Close()
+		return true
+	})
+	return nil
+}
+
+func (h *EchoHandler) Broadcast(msg []byte, sender net.Conn) error {
+	h.activeConnMap.Range(func(key interface{}, value interface{}) bool {
+		client := key.(*Client)
+		if sender != client.Conn {
+			_, err := client.Conn.Write(msg)
+			log.Printf("Client in process #%d send %s from port %s", os.Getpid(), string(msg), client.Conn.RemoteAddr().String())
+			if err != nil {
+				log.Printf("error writing message: %v", err)
+			}
+		}
 		return true
 	})
 	return nil
