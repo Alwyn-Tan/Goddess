@@ -1,7 +1,8 @@
-package redis
+package server
 
 import (
-	"Goddess/interface/database"
+	"Goddess/database"
+	"Goddess/parser"
 	"context"
 	"log"
 	"net"
@@ -9,20 +10,20 @@ import (
 	"sync/atomic"
 )
 
-type RedisHandler struct {
+type Handler struct {
 	activeConnMap sync.Map
 	database      database.Database
 	closing       atomic.Bool
 }
 
-func InitRedisHandler() *RedisHandler {
-	var database database.Database
-	return &RedisHandler{
-		database: database,
+func InitHandler() *Handler {
+	var db database.Database
+	return &Handler{
+		database: db,
 	}
 }
 
-func (h *RedisHandler) Handle(ctx context.Context, conn net.Conn) {
+func (h *Handler) Handle(ctx context.Context, conn net.Conn) {
 	if h.closing.Load() {
 		conn.Close()
 		return
@@ -31,15 +32,15 @@ func (h *RedisHandler) Handle(ctx context.Context, conn net.Conn) {
 	client := StartNewConnection(conn)
 	h.activeConnMap.Store(client, struct{}{})
 
-	ch := ParseInputStream(conn)
+	ch := parser.ParseInputStream(conn)
 	for payload := range ch {
 		if payload.Error != nil {
 		}
 	}
 }
 
-func (h *RedisHandler) Close() error {
-	log.Println("redis handler closing")
+func (h *Handler) Close() error {
+	log.Println("core handler closing")
 	h.closing.Store(true)
 	h.activeConnMap.Range(func(key interface{}, value interface{}) bool {
 		client := key.(*Connection)

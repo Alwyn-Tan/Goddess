@@ -1,12 +1,13 @@
 package main
 
 import (
+	"Goddess/server"
 	"Goddess/tcp"
 	"time"
 )
 
 func main() {
-	tcp.Serve(&tcp.ServerConfig{
+	server.Serve(&server.ServerConfig{
 		Address:        ":6399",
 		MaxConnections: 3,
 		Timeout:        10 * time.Second,

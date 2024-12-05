@@ -1,14 +1,14 @@
-package redis
+package parser
 
 import (
-	"Goddess/interface/redis"
+	"Goddess/msg"
 	"bufio"
 	"bytes"
 	"io"
 )
 
 type Payload struct {
-	Data  redis.RESPMsg
+	Data  msg.Msg
 	Error error
 }
 
