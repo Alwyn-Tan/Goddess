@@ -1,8 +1,8 @@
 package database
 
 import (
-	"Goddess/datastruct/dict"
-	"Goddess/datastruct/list"
+	"Goddess/datatype/hash"
+	"Goddess/datatype/list"
 )
 
 const (
@@ -11,7 +11,7 @@ const (
 
 type Database struct {
 	index int
-	data  *dict.ConcurrentDict
+	data  *hash.ConcurrentDict
 }
 
 func initDatabase() *Database {
