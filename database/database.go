@@ -11,7 +11,7 @@ const (
 
 type Database struct {
 	index int
-	data  *hash.ConcurrentDict
+	data  *hash.Dict
 }
 
 func initDatabase() *Database {
